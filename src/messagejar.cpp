@@ -20,15 +20,20 @@ using std::vector;
 unique_ptr<string> request(const string &endpoint, const std::map<string, string> &kv)
 {
     HTTPClient http;
-    string url = string(SERVER_URL) + endpoint + "?";
+    string url = string(SERVER_URL) + endpoint;
 
+    string body = "";
+    bool first = true;
     for (auto &pair : kv)
     {
-        url += pair.first + "=" + pair.second + "&";
+        if (!first) body += "&";
+        body += pair.first + "=" + pair.second;
+        first = false;
     }
 
     http.begin(url.c_str());
-    int httpCode = http.GET();
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    int httpCode = http.POST((uint8_t*)body.c_str(), body.length());
 
     if (httpCode > 0)
     {
@@ -48,13 +53,13 @@ Message::Message(const std::map<string, string> &data)
     {
         author = data.at("author");
         content = data.at("content");
-        timestamp = data.at("timestamp");
-        message_id = data.at("message_id");
+        timestamp = data.at("created");
+        message_id = data.at("id");
     }
     catch (const std::out_of_range &)
     {
         author = "";
-        content = "error loading message";
+        content = "error parsing message";
         timestamp = "";
         message_id = "";
     }
@@ -62,7 +67,8 @@ Message::Message(const std::map<string, string> &data)
 
 string Message::as_string() const
 {
-    return "[" + timestamp + "] " + author + ": " + content;
+    // return "[" + timestamp + "] " + author + ": " + content;
+    return author + ": " + content + "\n";
 }
 
 MessageJar::MessageJar(string username, string password) : username(username), password(password) {}
@@ -111,7 +117,7 @@ shared_ptr<vector<Message>> MessageJar::get_messages(string room, int latest)
         return nullptr;
     }
 
-    auto response = request("/get_messages", {{"username", username}, {"password", password}, {"room", room}});
+    auto response = request("/api-get", {{"username", username}, {"password", password}, {"room", room}});
     if (!response)
     {
         return nullptr;
