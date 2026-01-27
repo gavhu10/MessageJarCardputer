@@ -1,11 +1,22 @@
 #include <M5Cardputer.h>
 #include <thread>
 #include <atomic>
+#include <WiFi.h>
 
 #include "input.h"
 #include "display.h"
 #include "serial.h"
 #include "event.h"
+#include "messagejar.h"
+
+
+#define SSID ""
+#define PASSWORD ""
+#define ROOM "lobby"
+
+#define USERNAME ""
+#define USERPASSWORD ""
+
 
 // Config
 BaudRate baudRate = BAUD_9600;
@@ -28,6 +39,9 @@ std::string receiveString;
 
 // Lock sendString for thread safe purpose
 std::mutex sendMutex;
+
+// MessageJar instance
+MessageJar User(USERNAME, USERPASSWORD);
 
 void config() {
   bool firstRender = true;
@@ -61,6 +75,7 @@ void terminal() {
   while (running) {
 
     if (Serial1.available()) {
+      // i think this is where input comes from
       int bytesRead = Serial1.readBytes(buffer, maxReadSize);
       buffer[bytesRead] = '\0';
 
@@ -74,7 +89,8 @@ void terminal() {
     }
 
     if (sendDataFlag) {
-      Serial1.println(sendString.c_str());
+      //this is where output goes to
+      User.send( std::string{ROOM}, std::string{sendString.c_str()});
       sendDataFlag = false;
       std::lock_guard<std::mutex> lock(sendMutex);
       sendString.clear();
@@ -106,6 +122,16 @@ void setup() {
   Serial.begin(9600); // for some reason, we have to init Serial to make Serial1 works
   Serial1.begin(baudRateToInt(baudRate), serialConfig, rxPin, txPin);
   Serial1.setTimeout(100);  // Timeout for readBytes
+
+  // WiFi connect
+
+  WiFi.begin(SSID, PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+  assert(User.check());
+  
 
   // Prompt thread
   std::thread inputThread(handlePrompt, std::ref(sendDataFlag), std::ref(sendString), 
