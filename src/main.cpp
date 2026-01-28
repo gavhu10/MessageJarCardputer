@@ -2,22 +2,23 @@
 #include <thread>
 #include <atomic>
 #include <WiFi.h>
+#include <ArduinoJson.h>
 
 #include "input.h"
 #include "display.h"
 #include "serial.h"
 #include "event.h"
 #include "messagejar.h"
+#include "SdService.h"
 
-#define SSID ""
-#define PASSWORD ""
-#define ROOM "lobby"
+#include <string>
 
-#define USERNAME ""
-#define USERPASSWORD ""
-
+using std::make_shared;
+using std::shared_ptr;
+using std::string;
 
 // Config
+#define CONFIG_FILE_PATH "/mjconfig.json"
 BaudRate baudRate = BAUD_9600;
 uint8_t rxPin = 1;
 uint8_t txPin = 2;
@@ -28,6 +29,12 @@ bool flowControl = false;
 bool inverted = false;
 uint8_t selectedIndex = LAUNCH_INDEX;
 short times_before_refresh = 5;
+
+string SSID = "";
+string PASSWORD = "";
+string ROOM = "";
+string USERNAME = "";
+string USERPASSWORD = "";
 
 // Var atomic for input thread
 std::atomic<bool> sendDataFlag(false);
@@ -41,9 +48,50 @@ std::string receiveString;
 std::mutex sendMutex;
 
 // MessageJar instance
-MessageJar User(USERNAME, USERPASSWORD);
+MessageJar *User = nullptr;
+
+// SdService instance
+SdService SDCard;
 
 void config()
+{
+
+  std::map<string, string> data = {};
+
+  if (!SDCard.isFile(CONFIG_FILE_PATH))
+  {
+    assert(0);
+  }
+  auto configData = SDCard.readFile(CONFIG_FILE_PATH);
+
+  JsonDocument doc;
+  deserializeJson(doc, configData.c_str());
+  JsonObject obj = doc.as<JsonObject>();
+
+  for (auto pair : obj)
+  {
+    data[pair.key().c_str()] = pair.value().as<string>();
+  }
+
+  try
+  {
+    SSID = data.at("ssid");
+    PASSWORD = data.at("wifipassword");
+    USERPASSWORD = data.at("userpassword");
+    USERNAME = data.at("username");
+    ROOM = data.at("room");
+  }
+  catch (const std::out_of_range &)
+  {
+    SSID = "";
+    PASSWORD = "";
+    USERPASSWORD = "";
+    USERNAME = "";
+    ROOM = "";
+  }
+}
+
+void _config()
 {
   bool firstRender = true;
   while (true)
@@ -84,7 +132,7 @@ void terminal()
 
     if (!times)
     {
-      std::shared_ptr<std::vector<Message>> messages = User.get_messages(ROOM);
+      std::shared_ptr<std::vector<Message>> messages = User->get_messages(ROOM);
       string buffer = "";
 
       if (messages && messages->size())
@@ -101,7 +149,7 @@ void terminal()
     if (sendDataFlag)
     {
       // this is where output goes to
-      User.send(std::string{ROOM}, std::string{sendString.c_str()});
+      User->send(std::string{ROOM}, std::string{sendString.c_str()});
       sendDataFlag = false;
       std::lock_guard<std::mutex> lock(sendMutex);
       sendString.clear();
@@ -129,25 +177,28 @@ void setup()
   M5Cardputer.begin(cfg);
 
   displayInit();
-  // displayWelcome();
-  // delay(2000);
 
-  // Serial config
+  SDCard.begin();
+
+  displayWelcome();
+  delay(2000);
+
+  // config
   config();
-  auto serialConfig = serialGetConfig(dataBits, parity, stopBits, flowControl);
-  Serial.begin(9600); // for some reason, we have to init Serial to make Serial1 works
-  // Serial1.begin(baudRateToInt(baudRate), serialConfig, rxPin, txPin);
-  // Serial1.setTimeout(100); // Timeout for readBytes
+
 
   // WiFi connect
 
-  WiFi.begin(SSID, PASSWORD);
+  User = new MessageJar(USERNAME, USERPASSWORD);
+
+  WiFi.begin(SSID.c_str(), PASSWORD.c_str());
+
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
   }
 
-  assert(User.check());
+  assert(User->check());
 
   // Prompt thread
   std::thread inputThread(handlePrompt, std::ref(sendDataFlag), std::ref(sendString),
