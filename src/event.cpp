@@ -1,4 +1,15 @@
 #include "event.h"
+#include "messagejar.h"
+#include <string>
+#include <thread>
+
+using std::string;
+
+shared_ptr<vector<Message>> get(string room, std::mutex &userMutex, MessageJar *user)
+{
+    std::lock_guard<std::mutex> lock(userMutex);
+    return user->get_messages(room);
+}
 
 uint8_t handleIndexSelection(char input, uint8_t currentIndex)
 {
@@ -60,36 +71,31 @@ void handleConfigSelection(char input, BaudRate &baudRate, uint8_t &rxPin, uint8
     }
 }
 
-void handlePrompt(std::atomic<bool> &sendDataFlag, std::string &sendString,
-                  std::atomic<bool> &running, std::mutex &sendMutex)
+void messageTask(void *pvParameters)
 {
-    while (running)
-    {
-        char input = promptInputHandler();
+    // Cast the void pointer back to our struct
+    MessageTaskParams *params = (MessageTaskParams *)pvParameters;
 
-        switch (input)
+    while (*(params->running))
+    {
+
+        shared_ptr<vector<Message>> messages = get("cardputer", *(params->userMutex), params->user);
+
+        if (messages)
         {
-        case KEY_NONE:
-            break;
-        case KEY_OK:
-            sendDataFlag = true;
-            break;
-        case KEY_DEL:
-        {
-            std::lock_guard<std::mutex> lock(sendMutex);
-            if (!sendString.empty())
+            string buffer = "";
+            for (const auto &msg : *messages)
             {
-                sendString.pop_back();
+                buffer += msg.as_string();
             }
+
+            std::lock_guard<std::mutex> lock(*(params->receiveMutex));
+            *(params->receiveString) = buffer;
+            *(params->sendDataFlag) = true;
         }
-        break;
-        default:
-        {
-            std::lock_guard<std::mutex> lock(sendMutex);
-            sendString += input;
-        }
-        break;
-        }
-        delay(30);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
+
+    delete params;
+    vTaskDelete(NULL);
 }
