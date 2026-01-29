@@ -99,7 +99,7 @@ void displayStart(bool selected)
 void displayTerminal(std::string receiveString)
 {
     const uint8_t charsPerLine = 34;
-    const uint8_t linesPerScreen = 10;
+    const uint8_t linesPerScreen = 12;
 
     // Split receiveString by \n and wrap text
     std::vector<std::string> lines;
@@ -140,6 +140,7 @@ void displayTerminal(std::string receiveString)
     // Clear the terminal view before displaying the new content
     displayClearTerminalView();
     M5.Lcd.setCursor(0, DEFAULT_MARGIN);
+    M5.Lcd.setTextSize(1);
 
     // Print only the visible portion of the terminal string
     for (size_t i = startLine; i < totalLines; ++i)
@@ -185,4 +186,25 @@ void displayClearMainView(uint8_t offsetY)
 void displayClearTerminalView()
 {
     M5.Lcd.fillRect(0, 0, M5.Lcd.width(), M5.Lcd.height() - 30, BACKGROUND_COLOR);
+}
+
+void displayMessageBox(std::string message)
+{
+    // Clear screen
+    M5.Lcd.fillScreen(BACKGROUND_COLOR);
+
+    // Draw box
+    uint16_t boxWidth = M5.Lcd.width() - 40;
+    uint16_t boxHeight = 30;
+    uint16_t boxX = 20;
+    uint16_t boxY = (M5.Lcd.height() - boxHeight) / 2;
+
+    M5.Lcd.fillRoundRect(boxX, boxY, boxWidth, boxHeight, DEFAULT_ROUND_RECT, RECT_COLOR_DARK);
+    M5.Lcd.drawRoundRect(boxX, boxY, boxWidth, boxHeight, DEFAULT_ROUND_RECT, PRIMARY_COLOR);
+
+    // Print message
+    M5.Lcd.setTextColor(TEXT_COLOR);
+    M5.Lcd.setTextSize(1.5);
+    M5.Lcd.setCursor(boxX + 10, boxY + (boxHeight / 2) - 8);
+    M5.Lcd.printf(message.c_str());
 }

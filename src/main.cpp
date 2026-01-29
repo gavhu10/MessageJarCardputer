@@ -68,7 +68,11 @@ void config()
 
   if (!SDCard.isFile(CONFIG_FILE_PATH))
   {
-    assert(0);
+    displayMessageBox("Config file not found!");
+    while (true)
+    {
+      delay(1000);
+    }
   }
   auto configData = SDCard.readFile(CONFIG_FILE_PATH);
 
@@ -91,11 +95,16 @@ void config()
   }
   catch (const std::out_of_range &)
   {
-    SSID = "";
-    PASSWORD = "";
-    USERPASSWORD = "";
-    USERNAME = "";
-    ROOM = "";
+    // SSID = "";
+    // PASSWORD = "";
+    // USERPASSWORD = "";
+    // USERNAME = "";
+    // ROOM = "";
+    displayMessageBox("Config file is missing required fields!");
+    while (true)
+    {
+      delay(1000);
+    }
   }
 }
 
@@ -197,11 +206,14 @@ void setup()
 
   WiFi.begin(SSID.c_str(), PASSWORD.c_str());
 
+  displayMessageBox("Connecting to WiFi...");
+
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
   }
 
+  displayMessageBox("Connected to WiFi!");
   assert(User->check());
 
   MessageTaskParams *params = new MessageTaskParams{
@@ -210,7 +222,9 @@ void setup()
       &running,
       &receiveMutex,
       &userMutex,
-      User};
+      User,
+      ROOM,
+  };
 
   xTaskCreate(     // Using xTaskCreate to manage memory better
       messageTask, // Function to run

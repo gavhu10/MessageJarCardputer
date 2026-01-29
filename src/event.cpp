@@ -79,7 +79,7 @@ void messageTask(void *pvParameters)
     while (*(params->running))
     {
 
-        shared_ptr<vector<Message>> messages = get("cardputer", *(params->userMutex), params->user);
+        shared_ptr<vector<Message>> messages = get(params->room, *(params->userMutex), params->user);
 
         if (messages)
         {

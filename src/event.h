@@ -29,6 +29,7 @@ struct MessageTaskParams
     std::mutex *receiveMutex;
     std::mutex *userMutex;
     MessageJar *user;
+    string room;
 };
 
 uint8_t handleIndexSelection(char input, uint8_t currentIndex);
