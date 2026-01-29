@@ -17,9 +17,6 @@
 
 void displayInit();
 void displayWelcome();
-void displayConfig(int baud, uint8_t rx, uint8_t tx, uint8_t dataBits, 
-                   std::string parity, uint8_t stopBits, bool flowControl, 
-                   bool inverted, uint8_t selectedIndex);
 void displayStart(bool selected);
 void displayTerminal(std::string terminalSting);
 void displayPrompt(std::string sendString);

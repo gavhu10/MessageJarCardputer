@@ -34,61 +34,6 @@ void displayWelcome()
     M5.Lcd.printf("Communication");
 };
 
-void displayConfig(int baud, uint8_t rx, uint8_t tx, uint8_t dataBits,
-                   std::string parity, uint8_t stopBits, bool flowControl,
-                   bool inverted, uint8_t selectedIndex)
-{
-
-    std::vector<std::string> configStrings = {
-        "Rx Pin: " + std::to_string(rx),
-        "Tx Pin: " + std::to_string(tx),
-        "Baud: " + std::to_string(baud),
-        "Data Bits: " + std::to_string(dataBits),
-        "Parity: " + parity,
-        "Stop Bits: " + std::to_string(stopBits),
-        "Flow Ctrl: " + std::string(flowControl ? "Yes" : "No"),
-        "Inverted: " + std::string(inverted ? "Yes" : "No")};
-
-    uint8_t halfWidth = (M5Cardputer.Display.width() - 20) / 2; // largeur de chaque bloc dans une colonne
-    uint8_t sizeY = 22;                                         // hauteur de chaque bloc
-    uint8_t startY = 5;                                         // position de départ en Y pour le premier bloc
-    uint8_t stepY = 26;                                         // intervalle entre chaque bloc
-    uint8_t margin = DEFAULT_MARGIN;
-    uint8_t startText = 13; // position de départ du texte
-    bool selected;
-
-    displayClearMainView();
-    M5.Lcd.setTextSize(1.3);
-
-    for (size_t i = 0; i < configStrings.size(); ++i)
-    {
-        selected = (i == selectedIndex);
-
-        // Calculer la position en X pour la colonne (gauche ou droite)
-        uint8_t col = i / 4; // 0 pour la colonne de gauche, 1 pour la colonne de droite
-        uint8_t xPos = margin + col * (halfWidth + margin);
-
-        // Calculer la position en Y pour chaque ligne
-        uint8_t yPos = startY + (i % 4) * stepY;
-
-        drawRect(selected, xPos, yPos, halfWidth, sizeY);
-
-        uint8_t marginText = margin + 5;
-        M5.Lcd.setCursor(xPos + marginText, yPos + startText - startY);
-
-        M5.Lcd.printf(configStrings[i].c_str());
-    }
-
-    if (selectedIndex == configStrings.size())
-    {
-        displayStart(true);
-    }
-    else
-    {
-        displayStart(false);
-    }
-}
-
 void displayStart(bool selected)
 {
     drawRect(selected, DEFAULT_MARGIN, 110, M5.Lcd.width() - 15, 25);
