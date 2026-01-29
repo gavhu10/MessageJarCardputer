@@ -6,8 +6,10 @@
 #include <mutex>
 #include "serial.h"
 #include "input.h"
+#include "messagejar.h"
 
-enum ConfigIndex {
+enum ConfigIndex
+{
     RXPIN_INDEX = 0,
     TXPIN_INDEX,
     BAUD_INDEX,
@@ -19,10 +21,22 @@ enum ConfigIndex {
     LAUNCH_INDEX,
 };
 
+struct MessageTaskParams
+{
+    std::atomic<bool> *sendDataFlag;
+    string *receiveString;
+    std::atomic<bool> *running;
+    std::mutex *receiveMutex;
+    std::mutex *userMutex;
+    MessageJar *user;
+};
+
 uint8_t handleIndexSelection(char input, uint8_t currentIndex);
+
 void handleConfigSelection(char input, BaudRate &baudRate, uint8_t &rxPin, uint8_t &txPin,
-                           uint8_t &dataBits, ParityType &parity, uint8_t &stopBits, 
+                           uint8_t &dataBits, ParityType &parity, uint8_t &stopBits,
                            bool &flowControl, bool &inverted, uint8_t selectedIndex);
-void handlePrompt(std::atomic<bool> &sendDataFlag, std::string &sendString, 
-                  std::atomic<bool> &running, std::mutex &sendMutex);
+
+void messageTask(void *pvParameters);
+
 #endif

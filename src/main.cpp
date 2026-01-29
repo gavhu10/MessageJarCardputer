@@ -1,3 +1,4 @@
+// current state: I can't receive messages. Sending works fine.
 #include <M5Cardputer.h>
 #include <thread>
 #include <atomic>
@@ -36,22 +37,29 @@ string ROOM = "";
 string USERNAME = "";
 string USERPASSWORD = "";
 
-// Var atomic for input thread
-std::atomic<bool> sendDataFlag(false);
+// Var atomic for receive thread
+std::atomic<bool> receiveDataFlag(false);
 std::atomic<bool> running(true);
 
 // Strings for serial send/receive
 std::string sendString;
 std::string receiveString;
 
-// Lock sendString for thread safe purpose
-std::mutex sendMutex;
+// Lock receiveString and User for thread safe purpose
+std::mutex receiveMutex;
+std::mutex userMutex;
 
 // MessageJar instance
 MessageJar *User = nullptr;
 
 // SdService instance
 SdService SDCard;
+
+void send(string message)
+{
+  std::lock_guard<std::mutex> lock(userMutex);
+  User->send(std::string{ROOM}, std::string{message});
+}
 
 void config()
 {
@@ -119,46 +127,44 @@ void _config()
 void terminal()
 {
   int16_t promptSize = -1;
-  int16_t terminalSize = -1;
-
-  short times = 0;
+  // int16_t terminalSize = -1;
 
   while (running)
   {
 
-    times++;
-
-    times %= times_before_refresh;
-
-    if (!times)
     {
-      std::shared_ptr<std::vector<Message>> messages = User->get_messages(ROOM);
-      string buffer = "";
+      char input = promptInputHandler();
 
-      if (messages && messages->size())
+      switch (input)
       {
-        for (const auto &msg : *messages)
+      case KEY_NONE:
+        break;
+      case KEY_OK:
+        send(sendString);
+        sendString.clear();
+        break;
+      case KEY_DEL:
+      {
+        if (!sendString.empty())
         {
-          buffer += msg.as_string();
+          sendString.pop_back();
         }
-
-        receiveString = buffer;
+      }
+      break;
+      default:
+      {
+        sendString += input;
+      }
+      break;
       }
     }
 
-    if (sendDataFlag)
+    if (receiveDataFlag) // if data has been be recived (receiveDataFlag)
     {
-      // this is where output goes to
-      User->send(std::string{ROOM}, std::string{sendString.c_str()});
-      sendDataFlag = false;
-      std::lock_guard<std::mutex> lock(sendMutex);
-      sendString.clear();
-    }
-
-    if (terminalSize != receiveString.size())
-    {
+      std::lock_guard<std::mutex> lock(receiveMutex);
       displayTerminal(receiveString);
-      terminalSize = receiveString.size();
+      receiveString.clear();
+      receiveDataFlag = false;
     }
 
     if (promptSize != sendString.size())
@@ -180,15 +186,13 @@ void setup()
 
   SDCard.begin();
 
-  displayWelcome();
-  delay(2000);
+  // displayWelcome();
+  // delay(2000);
 
   // config
   config();
 
-
   // WiFi connect
-
   User = new MessageJar(USERNAME, USERPASSWORD);
 
   WiFi.begin(SSID.c_str(), PASSWORD.c_str());
@@ -200,10 +204,24 @@ void setup()
 
   assert(User->check());
 
-  // Prompt thread
-  std::thread inputThread(handlePrompt, std::ref(sendDataFlag), std::ref(sendString),
-                          std::ref(running), std::ref(sendMutex));
-  inputThread.detach();
+  MessageTaskParams *params = new MessageTaskParams{
+      &receiveDataFlag,
+      &receiveString,
+      &running,
+      &receiveMutex,
+      &userMutex,
+      User};
+
+  xTaskCreate(     // Using xTaskCreate to manage memory better
+      messageTask, // Function to run
+      "MsgTask",   // Name (for debugging)
+      8192,        // Stack size (in bytes)
+      params,      // Parameter to pass
+      1,           // Priority
+      NULL         // Task handle
+  );
+
+  displayClearMainView();
 }
 
 void loop()
