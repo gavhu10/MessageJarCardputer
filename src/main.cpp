@@ -1,18 +1,17 @@
-// current state: I can't receive messages. Sending works fine.
 #include <M5Cardputer.h>
-#include <thread>
-#include <atomic>
 #include <WiFi.h>
 #include <ArduinoJson.h>
 
 #include "input.h"
 #include "display.h"
-#include "serial.h"
 #include "event.h"
 #include "messagejar.h"
 #include "SdService.h"
 
 #include <string>
+#include <mutex>
+#include <thread>
+#include <atomic>
 
 using std::make_shared;
 using std::shared_ptr;
@@ -20,15 +19,8 @@ using std::string;
 
 // Config
 #define CONFIG_FILE_PATH "/mjconfig.json"
-BaudRate baudRate = BAUD_9600;
-uint8_t rxPin = 1;
-uint8_t txPin = 2;
-uint8_t dataBits = 8;
-ParityType parity = NONE;
-uint8_t stopBits = 1;
 bool flowControl = false;
 bool inverted = false;
-uint8_t selectedIndex = LAUNCH_INDEX;
 short times_before_refresh = 5;
 
 string SSID = "";
@@ -95,11 +87,6 @@ void config()
   }
   catch (const std::out_of_range &)
   {
-    // SSID = "";
-    // PASSWORD = "";
-    // USERPASSWORD = "";
-    // USERNAME = "";
-    // ROOM = "";
     displayMessageBox("Config file is missing required fields!");
     while (true)
     {
@@ -108,30 +95,6 @@ void config()
   }
 }
 
-void _config()
-{
-  bool firstRender = true;
-  while (true)
-  {
-    char input = configInputHandler();
-    selectedIndex = handleIndexSelection(input, selectedIndex);
-    handleConfigSelection(input, baudRate, rxPin, txPin, dataBits, parity, stopBits, flowControl, inverted, selectedIndex);
-
-    if (input != KEY_NONE || firstRender)
-    {
-      displayConfig(baudRateToInt(baudRate), rxPin, txPin, dataBits, parityToString(parity), stopBits, flowControl, inverted, selectedIndex);
-      firstRender = false;
-    }
-
-    // If user presses the start button, we leave config screen
-    if (input == KEY_OK && selectedIndex == LAUNCH_INDEX)
-    {
-      displayClearMainView();
-      running = true;
-      break;
-    }
-  }
-}
 
 void terminal()
 {

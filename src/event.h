@@ -4,22 +4,8 @@
 #include <string>
 #include <atomic>
 #include <mutex>
-#include "serial.h"
 #include "input.h"
 #include "messagejar.h"
-
-enum ConfigIndex
-{
-    RXPIN_INDEX = 0,
-    TXPIN_INDEX,
-    BAUD_INDEX,
-    BITS_INDEX,
-    PARITY_INDEX,
-    STOP_BITS_INDEX,
-    FLOW_CONTROL_INDEX,
-    INVERTED_INDEX,
-    LAUNCH_INDEX,
-};
 
 struct MessageTaskParams
 {
@@ -32,11 +18,7 @@ struct MessageTaskParams
     string room;
 };
 
-uint8_t handleIndexSelection(char input, uint8_t currentIndex);
-
-void handleConfigSelection(char input, BaudRate &baudRate, uint8_t &rxPin, uint8_t &txPin,
-                           uint8_t &dataBits, ParityType &parity, uint8_t &stopBits,
-                           bool &flowControl, bool &inverted, uint8_t selectedIndex);
+shared_ptr<vector<Message>> get(string room, std::mutex &userMutex, MessageJar *user);
 
 void messageTask(void *pvParameters);
 
