@@ -1,4 +1,8 @@
 #include "display.h"
+#include "input.h"
+
+#include <memory>
+#include <vector>
 
 void displayInit()
 {
@@ -152,4 +156,68 @@ void displayMessageBox(std::string message)
     M5.Lcd.setTextSize(1.5);
     M5.Lcd.setCursor(boxX + 10, boxY + (boxHeight / 2) - 8);
     M5.Lcd.printf(message.c_str());
+}
+
+unsigned int selectFromList(std::vector<std::string> items, unsigned int startIndex)
+{
+    uint8_t selectedIndex = startIndex;
+    bool selectionMade = false;
+    bool firstRender = true;
+
+    while (!selectionMade)
+    {
+
+        // Wait for button input
+        char input = promptInputHandler();
+
+        switch (input)
+        {
+        case KEY_ARROW_UP:
+        case KEY_ARROW_LEFT:
+            if (selectedIndex > 0)
+            {
+                selectedIndex--;
+            }
+            break;
+
+        case KEY_ARROW_DOWN:
+        case KEY_ARROW_RIGHT:
+            if (selectedIndex < items.size() - 1)
+            {
+                selectedIndex++;
+            }
+            break;
+
+        case KEY_OK:
+            return selectedIndex;
+        case KEY_NONE:
+            // No input, continue
+            if (firstRender)
+            {
+                firstRender = false;
+            }
+            else
+            {
+                continue;
+            }
+        default:
+            break;
+        }
+
+        // Clear screen
+        displayClearMainView();
+
+        // Display items
+        for (size_t i = 0; i < items.size(); ++i)
+        {
+            bool isSelected = (i == selectedIndex);
+            drawRect(isSelected, DEFAULT_MARGIN, DEFAULT_MARGIN + (i * 30), M5.Lcd.width() - 15, 25);
+            M5.Lcd.setCursor(DEFAULT_MARGIN + 10, DEFAULT_MARGIN + 8 + (i * 30));
+            M5.Lcd.print(items[i].c_str());
+        }
+
+        delay(100);
+    }
+
+    return selectedIndex;
 }

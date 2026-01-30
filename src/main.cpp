@@ -83,7 +83,6 @@ void config()
     PASSWORD = data.at("wifipassword");
     USERPASSWORD = data.at("userpassword");
     USERNAME = data.at("username");
-    ROOM = data.at("room");
   }
   catch (const std::out_of_range &)
   {
@@ -92,6 +91,43 @@ void config()
     {
       delay(1000);
     }
+  }
+
+  User = new MessageJar(USERNAME, USERPASSWORD);
+
+  // WiFi connect
+  WiFi.begin(SSID.c_str(), PASSWORD.c_str());
+
+  displayMessageBox("Connecting to WiFi...");
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+  }
+
+  displayMessageBox("Connected to WiFi!");
+  if (!User->check())
+  {
+    displayMessageBox("User auth failed!");
+    while (true)
+    {
+      delay(1000);
+    }
+  }
+  displayMessageBox("Getting rooms...");
+
+  auto rooms = User->get_rooms();
+  if (!rooms || rooms->empty())
+  {
+    displayMessageBox("No rooms found!");
+    while (true)
+    {
+      delay(1000);
+    }
+  }
+  else
+  {
+    ROOM = rooms->at(selectFromList(*rooms));
   }
 }
 
@@ -162,29 +198,6 @@ void setup()
 
   // config
   config();
-
-  // WiFi connect
-  User = new MessageJar(USERNAME, USERPASSWORD);
-
-  WiFi.begin(SSID.c_str(), PASSWORD.c_str());
-
-  displayMessageBox("Connecting to WiFi...");
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-  }
-
-  displayMessageBox("Connected to WiFi!");
-  if (!User->check())
-  {
-    displayMessageBox("User auth failed!");
-    delay(1000);
-    while (true)
-    {
-      delay(1000);
-    }
-  }
 
   MessageTaskParams *params = new MessageTaskParams{
       &receiveDataFlag,

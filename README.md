@@ -11,7 +11,6 @@ Message jar loads its configuration from `mjconfig.json`. Here is an example con
   "wifipassword": "wifi password",
   "username": "user",
   "userpassword": "password",
-  "room": "lobby"
 }
 ```
 
