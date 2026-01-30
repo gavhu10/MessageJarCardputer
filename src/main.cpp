@@ -87,14 +87,13 @@ void config()
   }
   catch (const std::out_of_range &)
   {
-    displayMessageBox("Config file is missing required fields!");
+    displayMessageBox("Config is malformed!");
     while (true)
     {
       delay(1000);
     }
   }
 }
-
 
 void terminal()
 {
@@ -177,7 +176,15 @@ void setup()
   }
 
   displayMessageBox("Connected to WiFi!");
-  assert(User->check());
+  if (!User->check())
+  {
+    displayMessageBox("User auth failed!");
+    delay(1000);
+    while (true)
+    {
+      delay(1000);
+    }
+  }
 
   MessageTaskParams *params = new MessageTaskParams{
       &receiveDataFlag,
@@ -199,6 +206,7 @@ void setup()
   );
 
   displayClearMainView();
+  displayMessageBox("Loading messages...");
 }
 
 void loop()

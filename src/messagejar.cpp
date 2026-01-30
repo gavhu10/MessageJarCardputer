@@ -15,7 +15,7 @@ using std::string;
 using std::unique_ptr;
 using std::vector;
 
-#define SERVER_URL "https://gavhu10.pythonanywhere.com/api/"
+#define SERVER_URL "https://messagejar.pythonanywhere.com/api/"
 
 unique_ptr<string> request(const string &endpoint, const std::map<string, string> &kv)
 {
@@ -26,14 +26,15 @@ unique_ptr<string> request(const string &endpoint, const std::map<string, string
     bool first = true;
     for (auto &pair : kv)
     {
-        if (!first) body += "&";
+        if (!first)
+            body += "&";
         body += pair.first + "=" + pair.second;
         first = false;
     }
 
     http.begin(url.c_str());
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    int httpCode = http.POST((uint8_t*)body.c_str(), body.length());
+    int httpCode = http.POST((uint8_t *)body.c_str(), body.length());
 
     if (httpCode > 0)
     {
@@ -76,13 +77,27 @@ MessageJar::MessageJar(string username, string password) : username(username), p
 bool MessageJar::check()
 {
     auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "verify_user"}});
-    return response != nullptr;
+    if (response)
+    {
+        return *response == "OK";
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool MessageJar::create_user()
 {
     auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "new_user"}});
-    return response != nullptr;
+    if (response)
+    {
+        return *response == "OK";
+    }
+    else
+    {
+        return false;
+    }
 }
 
 shared_ptr<vector<string>> MessageJar::get_rooms()
@@ -150,7 +165,14 @@ bool MessageJar::send(string room, string content)
     }
 
     auto response = request("/api-send", {{"username", username}, {"password", password}, {"room", room}, {"message", content}});
-    return response != nullptr;
+    if (response)
+    {
+        return *response == "OK";
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool MessageJar::create_room(string room_name)
@@ -161,5 +183,12 @@ bool MessageJar::create_room(string room_name)
     }
 
     auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "create_room"}, {"room", room_name}});
-    return response != nullptr;
+    if (response)
+    {
+        return *response == "OK";
+    }
+    else
+    {
+        return false;
+    }
 }
