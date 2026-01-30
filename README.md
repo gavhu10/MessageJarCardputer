@@ -9,8 +9,8 @@ Message jar loads its configuration from `mjconfig.json`. Here is an example con
 {
   "ssid": "MyWifiNetwork",
   "wifipassword": "wifi password",
-  "userpassword": "password",
   "username": "user",
+  "userpassword": "password",
   "room": "lobby"
 }
 ```
