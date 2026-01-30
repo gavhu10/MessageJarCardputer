@@ -20,9 +20,10 @@ void displayWelcome();
 void displayStart(bool selected);
 void displayTerminal(std::string terminalSting);
 void displayPrompt(std::string sendString);
-void displayClearMainView(uint8_t offsetY=0);
+void displayClearMainView(uint8_t offsetY = 0);
 void displayClearTerminalView();
 void displayMessageBox(std::string message);
+unsigned int selectFromList(std::vector<std::string> items, unsigned int startIndex = 0);
 
 // Utility Function (forward declaration if needed)
 void drawRect(bool selected, uint8_t margin, uint16_t startY, uint16_t sizeX, uint16_t sizeY);
