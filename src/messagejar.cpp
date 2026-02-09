@@ -15,26 +15,58 @@ using std::string;
 using std::unique_ptr;
 using std::vector;
 
-#define SERVER_URL "https://messagejar.pythonanywhere.com/api/"
+#define SERVER_URL "https://messagejar.pythonanywhere.com/api"
+
+bool check_resp(const std::string& resp) {
+    // 1. Find the first non-whitespace character (the opening '{')
+    auto first = std::find_if(resp.begin(), resp.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    });
+
+    // If string is empty or only whitespace
+    if (first == resp.end() || *first != '{') {
+        return true; 
+    }
+
+    // 2. Look for the "e" key immediately following the '{'
+    // We skip whitespace again in case there is a space after the '{'
+    auto after_brace = std::next(first);
+    auto key_start = std::find_if(after_brace, resp.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    });
+
+    // Check if the next sequence is "e":
+    const std::string error_key = "\"e\":";
+    
+    // Check if the remaining string is long enough and matches
+    if (std::distance(key_start, resp.end()) >= error_key.size()) {
+        if (std::equal(error_key.begin(), error_key.end(), key_start)) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 unique_ptr<string> request(const string &endpoint, const std::map<string, string> &kv)
 {
     HTTPClient http;
     string url = string(SERVER_URL) + endpoint;
 
-    string body = "";
-    bool first = true;
-    for (auto &pair : kv)
+    JsonDocument doc;
+
+    for (const auto &item : kv)
     {
-        if (!first)
-            body += "&";
-        body += pair.first + "=" + pair.second;
-        first = false;
+        doc[item.first] = item.second;
     }
 
+    String jsonBody;
+    serializeJson(doc, jsonBody);
+
     http.begin(url.c_str());
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    int httpCode = http.POST((uint8_t *)body.c_str(), body.length());
+
+    http.addHeader("Content-Type", "application/json");
+    int httpCode = http.POST(jsonBody);
 
     if (httpCode > 0)
     {
@@ -72,50 +104,40 @@ string Message::as_string() const
     return author + ": " + content + "\n";
 }
 
-MessageJar::MessageJar(string username, string password) : username(username), password(password) {}
+MessageJar::MessageJar(string token) : token(token) {}
 
 bool MessageJar::check()
 {
-    auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "verify_user"}});
-    if (response)
-    {
-        return *response == "OK";
-    }
-    else
+    auto response = request("/token/username", {{"token", token}});
+    if (!response || !check_resp(*response))
     {
         return false;
     }
+    return true;
 }
 
-bool MessageJar::create_user()
+bool MessageJar::create_user(string username, string password)
 {
-    auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "new_user"}});
-    if (response)
-    {
-        return *response == "OK";
-    }
-    else
+    auto response = request("/user/create", {{"username", username}, {"password", password}});
+    if (!response || !check_resp(*response))
     {
         return false;
     }
+    return true;
 }
 
 shared_ptr<vector<string>> MessageJar::get_rooms()
 {
-    if (!check())
-    {
-        return nullptr;
-    }
 
-    auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "list_rooms"}});
-    if (!response)
+    auto response = request("/rooms/list", {{"token", token}});
+    if (!response || !check_resp(*response))
     {
         return nullptr;
     }
 
     auto rooms = make_shared<vector<string>>();
     JsonDocument doc;
-    deserializeJson(doc, response->c_str());
+    deserializeJson(doc, response->c_str()); // TODO check for error
     JsonArray arr = doc.as<JsonArray>();
     for (JsonVariant v : arr)
     {
@@ -127,13 +149,9 @@ shared_ptr<vector<string>> MessageJar::get_rooms()
 
 shared_ptr<vector<Message>> MessageJar::get_messages(string room, int latest)
 {
-    if (!check())
-    {
-        return nullptr;
-    }
 
-    auto response = request("/api-get", {{"username", username}, {"password", password}, {"room", room}});
-    if (!response)
+    auto response = request("/get", {{"token", token}, {"room", room}});
+    if (!response || !check_resp(*response))
     {
         return nullptr;
     }
@@ -141,7 +159,7 @@ shared_ptr<vector<Message>> MessageJar::get_messages(string room, int latest)
     auto messages = make_shared<vector<Message>>();
     JsonDocument doc;
     deserializeJson(doc, response->c_str());
-    JsonArray arr = doc.as<JsonArray>();
+    JsonArray arr = doc.as<JsonArray>(); // TODO check for error
     for (JsonVariant v : arr)
     {
         std::map<string, string> msg_data;
@@ -159,36 +177,17 @@ shared_ptr<vector<Message>> MessageJar::get_messages(string room, int latest)
 
 bool MessageJar::send(string room, string content)
 {
-    if (!check())
-    {
-        return false;
-    }
 
-    auto response = request("/api-send", {{"username", username}, {"password", password}, {"room", room}, {"message", content}});
-    if (response)
-    {
-        return *response == "OK";
-    }
-    else
-    {
-        return false;
-    }
+    auto response = request("/send", {{"token", token}, {"room", room}, {"message", content}});
+    return (response && check_resp(*response));
 }
 
 bool MessageJar::create_room(string room_name)
 {
-    if (!check())
+    auto response = request("/room/create", {{"token", token}, {"room", room_name}});
+    if (!response || !check_resp(*response))
     {
         return false;
     }
-
-    auto response = request("/api-manage", {{"username", username}, {"password", password}, {"action", "create_room"}, {"room", room_name}});
-    if (response)
-    {
-        return *response == "OK";
-    }
-    else
-    {
-        return false;
-    }
+    return (response && check_resp(*response));
 }

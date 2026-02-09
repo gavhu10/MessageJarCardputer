@@ -29,17 +29,16 @@ private:
 class MessageJar
 {
 public:
-    MessageJar(string username, string password);
+    MessageJar(string token);
     bool check();
-    bool create_user();
+    bool create_user(string username, string password);
     shared_ptr<vector<string>> get_rooms();
     shared_ptr<vector<Message>> get_messages(string room, int latest = 0);
     bool send(string room, string content);
     bool create_room(string room_name);
 
 private:
-    string username;
-    string password;
+    string token;
 };
 
 #endif // MESSAGEJAR_H
