@@ -26,8 +26,7 @@ short times_before_refresh = 5;
 string SSID = "";
 string PASSWORD = "";
 string ROOM = "";
-string USERNAME = "";
-string USERPASSWORD = "";
+string TOKEN = "";
 
 // Var atomic for receive thread
 std::atomic<bool> receiveDataFlag(false);
@@ -81,8 +80,7 @@ void config()
   {
     SSID = data.at("ssid");
     PASSWORD = data.at("wifipassword");
-    USERPASSWORD = data.at("userpassword");
-    USERNAME = data.at("username");
+    TOKEN = data.at("token");
   }
   catch (const std::out_of_range &)
   {
@@ -93,7 +91,7 @@ void config()
     }
   }
 
-  User = new MessageJar(USERNAME, USERPASSWORD);
+  User = new MessageJar(TOKEN);
 
   // WiFi connect
   WiFi.begin(SSID.c_str(), PASSWORD.c_str());

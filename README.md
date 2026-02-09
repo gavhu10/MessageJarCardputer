@@ -4,19 +4,18 @@
 
 ## Config
 
-Message jar loads its configuration from `mjconfig.json`. Here is an example config:  
+Message jar loads its configuration from `mjconfig.json` on the sd card. Here is an example configuration:  
 ```json
 {
   "ssid": "MyWifiNetwork",
   "wifipassword": "wifi password",
-  "username": "user",
-  "userpassword": "password",
+  "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 }
 ```
 
 
 ## Keybinds:
 
-- <b>Config</b>: Use `Arrows` and `OK` button to toggle configuration options.
-- <b>Terminal</b>: Use `Keys` and `OK` button to send commands
+- <b>Config</b>: Use `Arrows` and `OK` button to select.
+- <b>Terminal</b>: Use `Keys` and `OK` button to send messages.
 
