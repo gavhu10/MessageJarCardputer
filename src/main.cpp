@@ -115,7 +115,7 @@ void config()
   displayMessageBox("Getting rooms...");
 
   auto rooms = User->get_rooms();
-  if (!rooms || rooms->empty())
+  if (!rooms)
   {
     displayMessageBox("No rooms found!");
     while (true)
@@ -125,7 +125,22 @@ void config()
   }
   else
   {
-    ROOM = rooms->at(selectFromList(*rooms));
+    rooms->push_back("+ Create new room");
+    int num = selectFromList(*rooms);
+    if (num == rooms->size() - 1)
+    { // then we are creating a new room
+      ROOM = getInput("");
+      if (!User->create_room(ROOM))
+      {
+        displayMessageBox("Failed to make room");
+        for (;;)
+          delay(1000);
+      }
+    }
+    else
+    {
+      ROOM = rooms->at(num);
+    }
   }
 }
 

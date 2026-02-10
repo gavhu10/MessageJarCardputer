@@ -5,6 +5,7 @@
 ## Config
 
 Message jar loads its configuration from `mjconfig.json` on the sd card. Here is an example configuration:  
+
 ```json
 {
   "ssid": "MyWifiNetwork",
@@ -13,9 +14,9 @@ Message jar loads its configuration from `mjconfig.json` on the sd card. Here is
 }
 ```
 
+To get a token, create an account at [messagejar.pythonanywhere.com](https://messagejar.pythonanywhere.com) and click on your username. Then, if you navigate "Your api tokens", you should be able to create (and revoke) api tokens.
 
 ## Keybinds:
 
 - <b>Config</b>: Use `Arrows` and `OK` button to select.
 - <b>Terminal</b>: Use `Keys` and `OK` button to send messages.
-

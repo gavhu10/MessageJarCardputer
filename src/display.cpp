@@ -47,7 +47,7 @@ void displayStart(bool selected)
 
 void displayTerminal(std::string receiveString)
 {
-    const uint8_t charsPerLine = 34;
+    const uint8_t charsPerLine = 39;
     const uint8_t linesPerScreen = 12;
 
     // Split receiveString by \n and wrap text
@@ -178,6 +178,7 @@ unsigned int selectFromList(std::vector<std::string> items, unsigned int startIn
             {
                 selectedIndex--;
             }
+            firstRender = false;
             break;
 
         case KEY_ARROW_DOWN:
@@ -186,6 +187,7 @@ unsigned int selectFromList(std::vector<std::string> items, unsigned int startIn
             {
                 selectedIndex++;
             }
+            firstRender = false;
             break;
 
         case KEY_OK:
@@ -220,4 +222,78 @@ unsigned int selectFromList(std::vector<std::string> items, unsigned int startIn
     }
 
     return selectedIndex;
+}
+
+std::string getInput(std::string prompt)
+{
+    bool firstRender = true;
+    std::string ret = "";
+
+    while (1)
+    {
+
+        // Wait for button input
+        char input = promptInputHandler();
+
+        switch (input)
+        {
+        case KEY_DEL:
+            if (ret.size())
+            {
+                ret.pop_back();
+            }
+            break;
+        case KEY_RETURN:
+        case KEY_OK:
+            if (firstRender)
+            {
+                continue;
+            }
+            return ret;
+        case KEY_NONE:
+            // No input, continue
+            if (firstRender)
+            {
+                firstRender = false;
+                break;
+            }
+            else
+            {
+                continue;
+            }
+        default:
+            ret += input;
+            break;
+        }
+
+        // Clear screen
+        displayClearMainView();
+
+        std::string sendString = ret;
+
+        if (sendString.length() > 26)
+        {
+            sendString = sendString.substr(sendString.length() - 26);
+        }
+
+        // TODO print prompt to tell user what they are entering
+
+        // Draw box
+        uint16_t boxWidth = M5.Lcd.width() - 40;
+        uint16_t boxHeight = 30;
+        uint16_t boxX = 20;
+        uint16_t boxY = (M5.Lcd.height() - boxHeight) / 2;
+
+        M5.Lcd.fillRoundRect(boxX, boxY, boxWidth, boxHeight, DEFAULT_ROUND_RECT, RECT_COLOR_DARK);
+        M5.Lcd.drawRoundRect(boxX, boxY, boxWidth, boxHeight, DEFAULT_ROUND_RECT, PRIMARY_COLOR);
+
+        // Print typed message
+        M5.Lcd.setTextColor(TEXT_COLOR);
+        M5.Lcd.setTextSize(1.5);
+        M5.Lcd.setCursor(boxX + 10, boxY + (boxHeight / 2) - 8);
+        M5.Lcd.print("> ");
+        M5.Lcd.print(sendString.c_str());
+
+        delay(100);
+    }
 }

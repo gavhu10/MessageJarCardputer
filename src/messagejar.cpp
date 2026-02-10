@@ -17,30 +17,32 @@ using std::vector;
 
 #define SERVER_URL "https://messagejar.pythonanywhere.com/api"
 
-bool check_resp(const std::string& resp) {
+bool check_resp(const std::string &resp)
+{
     // 1. Find the first non-whitespace character (the opening '{')
-    auto first = std::find_if(resp.begin(), resp.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    });
+    auto first = std::find_if(resp.begin(), resp.end(), [](unsigned char ch)
+                              { return !std::isspace(ch); });
 
     // If string is empty or only whitespace
-    if (first == resp.end() || *first != '{') {
-        return true; 
+    if (first == resp.end() || *first != '{')
+    {
+        return true;
     }
 
     // 2. Look for the "e" key immediately following the '{'
     // We skip whitespace again in case there is a space after the '{'
     auto after_brace = std::next(first);
-    auto key_start = std::find_if(after_brace, resp.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    });
+    auto key_start = std::find_if(after_brace, resp.end(), [](unsigned char ch)
+                                  { return !std::isspace(ch); });
 
     // Check if the next sequence is "e":
     const std::string error_key = "\"e\":";
-    
+
     // Check if the remaining string is long enough and matches
-    if (std::distance(key_start, resp.end()) >= error_key.size()) {
-        if (std::equal(error_key.begin(), error_key.end(), key_start)) {
+    if (std::distance(key_start, resp.end()) >= error_key.size())
+    {
+        if (std::equal(error_key.begin(), error_key.end(), key_start))
+        {
             return false;
         }
     }
@@ -184,7 +186,8 @@ bool MessageJar::send(string room, string content)
 
 bool MessageJar::create_room(string room_name)
 {
-    auto response = request("/room/create", {{"token", token}, {"room", room_name}});
+    auto response = request("/rooms/create", {{"token", token}, {"room", room_name}});
+    request(*response, {{}});
     if (!response || !check_resp(*response))
     {
         return false;
