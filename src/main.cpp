@@ -148,10 +148,12 @@ void terminal()
 {
   int16_t promptSize = -1;
   // int16_t terminalSize = -1;
+  size_t scroll = 0;
+  bool redraw = false;
+  string messages = "";
 
   while (running)
   {
-
     {
       char input = promptInputHandler();
 
@@ -171,6 +173,21 @@ void terminal()
         }
       }
       break;
+      case KEY_ARROW_DOWN:
+      {
+        if (scroll > 0)
+        {
+          --scroll;
+          redraw = true;
+        }
+        break;
+      }
+      case KEY_ARROW_UP:
+      {
+        ++scroll;
+        redraw = true;
+        break;
+      }
       default:
       {
         sendString += input;
@@ -182,8 +199,9 @@ void terminal()
     if (receiveDataFlag) // if data has been be recived (receiveDataFlag)
     {
       std::lock_guard<std::mutex> lock(receiveMutex);
-      displayTerminal(receiveString);
+      messages += receiveString;
       receiveString.clear();
+      redraw = true;
       receiveDataFlag = false;
     }
 
@@ -191,6 +209,12 @@ void terminal()
     {
       displayPrompt(sendString);
       promptSize = sendString.size();
+    }
+
+    if (redraw)
+    {
+      displayTerminal(messages, scroll);
+      redraw = false;
     }
 
     delay(100);

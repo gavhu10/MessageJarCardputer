@@ -152,7 +152,7 @@ shared_ptr<vector<string>> MessageJar::get_rooms()
 shared_ptr<vector<Message>> MessageJar::get_messages(string room, int latest)
 {
 
-    auto response = request("/get", {{"token", token}, {"room", room}});
+    auto response = request("/get", {{"token", token}, {"room", room}, {"latest", std::to_string(latest)}});
     if (!response || !check_resp(*response))
     {
         return nullptr;

@@ -45,7 +45,7 @@ void displayStart(bool selected)
     M5.Lcd.print("START SERIAL");
 };
 
-void displayTerminal(std::string receiveString)
+void displayTerminal(std::string receiveString, size_t scroll)
 {
     const uint8_t charsPerLine = 39;
     const uint8_t linesPerScreen = 12;
@@ -79,11 +79,18 @@ void displayTerminal(std::string receiveString)
     }
 
     // Now, calculate the number of lines and only display the last ones that fit on the screen
+    // and move it for scroll
     size_t totalLines = lines.size();
+    if (scroll > (totalLines-linesPerScreen)) {
+        scroll = totalLines-linesPerScreen;
+    }
+
     size_t startLine = 0;
+    size_t endLine = totalLines;
     if (totalLines > linesPerScreen)
     {
-        startLine = totalLines - linesPerScreen;
+        startLine = totalLines - linesPerScreen - scroll;
+        endLine -= scroll;
     }
 
     // Clear the terminal view before displaying the new content
@@ -92,7 +99,7 @@ void displayTerminal(std::string receiveString)
     M5.Lcd.setTextSize(1);
 
     // Print only the visible portion of the terminal string
-    for (size_t i = startLine; i < totalLines; ++i)
+    for (size_t i = startLine; i < endLine; ++i)
     {
         M5.Lcd.println(lines[i].c_str());
     }

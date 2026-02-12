@@ -18,7 +18,7 @@
 void displayInit();
 void displayWelcome();
 void displayStart(bool selected);
-void displayTerminal(std::string terminalSting);
+void displayTerminal(std::string terminalSting, size_t scroll = 0);
 void displayPrompt(std::string sendString);
 void displayClearMainView(uint8_t offsetY = 0);
 void displayClearTerminalView();
