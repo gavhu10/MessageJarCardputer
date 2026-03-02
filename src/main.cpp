@@ -52,11 +52,56 @@ void send(string message)
   User->send(std::string{ROOM}, std::string{message});
 }
 
-void config()
+void connect_to_wifi(std::map<string, string> config)
 {
 
-  std::map<string, string> data = {};
+  vector<string> foundSSIDs;
+  string SSID = "";
 
+  int n = WiFi.scanNetworks();
+
+  if (n > 0)
+  {
+    for (int i = 0; i < n; ++i)
+    {
+      // Add each SSID to the vector
+      foundSSIDs.push_back(WiFi.SSID(i).c_str());
+    }
+  }
+
+  foundSSIDs.push_back("Enter SSID...");
+  int ssidIndex = selectFromList(foundSSIDs);
+  if (ssidIndex == foundSSIDs.size() - 1)
+  {
+    SSID = getInput("SSID");
+  }
+  else
+  {
+    SSID = foundSSIDs[ssidIndex];
+  }
+
+  string PASSWORD = "";
+  try
+  {
+    PASSWORD = config.at(SSID).c_str();
+  }
+  catch (const std::out_of_range &)
+  {
+    PASSWORD = getInput("Password");
+  }
+
+  WiFi.begin(SSID.c_str(), PASSWORD.c_str());
+
+  displayMessageBox("Connecting to WiFi...");
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+  }
+}
+
+void config()
+{
   if (!SDCard.isFile(CONFIG_FILE_PATH))
   {
     displayMessageBox("Config file not found!");
@@ -68,19 +113,21 @@ void config()
   auto configData = SDCard.readFile(CONFIG_FILE_PATH);
 
   JsonDocument doc;
+  JsonDocument WIFI_CREDS;
   deserializeJson(doc, configData.c_str());
   JsonObject obj = doc.as<JsonObject>();
-
-  for (auto pair : obj)
-  {
-    data[pair.key().c_str()] = pair.value().as<string>();
-  }
+  std::map<string, string> wifiMap;
 
   try
   {
-    SSID = data.at("ssid");
-    PASSWORD = data.at("wifipassword");
-    TOKEN = data.at("token");
+    WIFI_CREDS = doc["wifi"];
+
+    for (auto pair : WIFI_CREDS.as<JsonObject>())
+    {
+      wifiMap[pair.key().c_str()] = pair.value().as<string>();
+    }
+
+    TOKEN = obj["token"].as<string>();
   }
   catch (const std::out_of_range &)
   {
@@ -93,15 +140,9 @@ void config()
 
   User = new MessageJar(TOKEN);
 
-  // WiFi connect
-  WiFi.begin(SSID.c_str(), PASSWORD.c_str());
+  displayMessageBox("Getting SSIDs...");
 
-  displayMessageBox("Connecting to WiFi...");
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-  }
+  connect_to_wifi(wifiMap);
 
   displayMessageBox("Connected to WiFi!");
   if (!User->check())
@@ -129,7 +170,7 @@ void config()
     int num = selectFromList(*rooms);
     if (num == rooms->size() - 1)
     { // then we are creating a new room
-      ROOM = getInput("");
+      ROOM = getInput("Room name");
       if (!User->create_room(ROOM))
       {
         displayMessageBox("Failed to make room");

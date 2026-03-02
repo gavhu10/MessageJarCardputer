@@ -15,7 +15,7 @@ using std::string;
 using std::unique_ptr;
 using std::vector;
 
-#define SERVER_URL "https://messagejar.pythonanywhere.com/api"
+#define SERVER_URL "https://messagejar.pythonanywhere.com/api/v1"
 
 bool check_resp(const std::string &resp)
 {

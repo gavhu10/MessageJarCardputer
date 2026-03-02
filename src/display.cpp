@@ -300,6 +300,8 @@ std::string getInput(std::string prompt)
         M5.Lcd.setCursor(boxX + 10, boxY + (boxHeight / 2) - 8);
         M5.Lcd.print("> ");
         M5.Lcd.print(sendString.c_str());
+        M5.Lcd.setCursor(boxX + 10, boxY - 20);
+        M5.Lcd.print(prompt.c_str());
 
         delay(100);
     }

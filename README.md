@@ -9,8 +9,10 @@ Message jar loads its configuration from `mjconfig.json` on the sd card. Here is
 
 ```json
 {
-  "ssid": "MyWifiNetwork",
-  "wifipassword": "wifi password",
+  "wifi": {
+    "ssid": "MyWifiNetwork",
+    "password": "wifi password"
+    },
   "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 }
 ```
