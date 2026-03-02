@@ -23,8 +23,6 @@ bool flowControl = false;
 bool inverted = false;
 short times_before_refresh = 5;
 
-string SSID = "";
-string PASSWORD = "";
 string ROOM = "";
 string TOKEN = "";
 
@@ -52,7 +50,7 @@ void send(string message)
   User->send(std::string{ROOM}, std::string{message});
 }
 
-void connect_to_wifi(std::map<string, string> config)
+std::pair<string, string> connect_to_wifi(std::map<string, string> config)
 {
 
   vector<string> foundSSIDs;
@@ -80,17 +78,18 @@ void connect_to_wifi(std::map<string, string> config)
     SSID = foundSSIDs[ssidIndex];
   }
 
-  string PASSWORD = "";
-  try
+  string password = "";
+
+  if (config.find(SSID) == config.end())
   {
-    PASSWORD = config.at(SSID).c_str();
+    password = getInput("Password");
   }
-  catch (const std::out_of_range &)
+  else
   {
-    PASSWORD = getInput("Password");
+    password = config[SSID];
   }
 
-  WiFi.begin(SSID.c_str(), PASSWORD.c_str());
+  WiFi.begin(SSID.c_str(), password.c_str());
 
   displayMessageBox("Connecting to WiFi...");
 
@@ -98,6 +97,15 @@ void connect_to_wifi(std::map<string, string> config)
   {
     delay(500);
   }
+
+  // return the wifi password if it was not in the config
+
+  if (config.find(SSID) == config.end())
+  {
+    return {SSID, password};
+  }
+
+  return {"", ""};
 }
 
 void config()
@@ -114,22 +122,11 @@ void config()
 
   JsonDocument doc;
   JsonDocument WIFI_CREDS;
-  deserializeJson(doc, configData.c_str());
+  DeserializationError error = deserializeJson(doc, configData);
   JsonObject obj = doc.as<JsonObject>();
   std::map<string, string> wifiMap;
 
-  try
-  {
-    WIFI_CREDS = doc["wifi"];
-
-    for (auto pair : WIFI_CREDS.as<JsonObject>())
-    {
-      wifiMap[pair.key().c_str()] = pair.value().as<string>();
-    }
-
-    TOKEN = obj["token"].as<string>();
-  }
-  catch (const std::out_of_range &)
+  if (error)
   {
     displayMessageBox("Config is malformed!");
     while (true)
@@ -138,11 +135,31 @@ void config()
     }
   }
 
+  WIFI_CREDS = doc["wifi"];
+
+  for (auto pair : WIFI_CREDS.as<JsonObject>())
+  {
+    wifiMap[pair.key().c_str()] = pair.value().as<string>();
+  }
+
+  TOKEN = obj["token"].as<string>();
+
   User = new MessageJar(TOKEN);
 
   displayMessageBox("Getting SSIDs...");
 
-  connect_to_wifi(wifiMap);
+  std::pair<string, string> creds = connect_to_wifi(wifiMap);
+
+  if (!creds.first.empty())
+  {
+    // Update the JSON document with the new credentials
+    doc["wifi"][creds.first] = creds.second;
+
+    string output;
+    serializeJson(doc, output);
+
+    SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
+  }
 
   displayMessageBox("Connected to WiFi!");
   if (!User->check())

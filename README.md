@@ -5,14 +5,10 @@
 
 ## Config
 
-Message jar loads its configuration from `mjconfig.json` on the sd card. Here is an example configuration:  
+Message jar loads its configuration from `mjconfig.json` on the sd card which it uses to store credentials. Here is the minimum configuration:  
 
 ```json
 {
-  "wifi": {
-    "ssid": "MyWifiNetwork",
-    "password": "wifi password"
-    },
   "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 }
 ```
