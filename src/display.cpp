@@ -81,8 +81,9 @@ void displayTerminal(std::string receiveString, size_t scroll)
     // Now, calculate the number of lines and only display the last ones that fit on the screen
     // and move it for scroll
     size_t totalLines = lines.size();
-    if (scroll > (totalLines-linesPerScreen)) {
-        scroll = totalLines-linesPerScreen;
+    if (scroll > (totalLines - linesPerScreen))
+    {
+        scroll = totalLines - linesPerScreen;
     }
 
     size_t startLine = 0;
@@ -216,13 +217,27 @@ unsigned int selectFromList(std::vector<std::string> items, unsigned int startIn
         // Clear screen
         displayClearMainView();
 
-        // Display items
-        for (size_t i = 0; i < items.size(); ++i)
+        const int VISIBLE_ROWS = 4;
+        static int offset = 0;
+
+        if (selectedIndex < offset)
         {
-            bool isSelected = (i == selectedIndex);
+            offset = selectedIndex; // Scroll up
+        }
+        else if (selectedIndex >= offset + VISIBLE_ROWS)
+        {
+            offset = selectedIndex - (VISIBLE_ROWS - 1); // Scroll down
+        }
+
+        displayClearMainView();
+        for (int i = 0; i < VISIBLE_ROWS + 1 && (i + offset) < items.size(); ++i)
+        {
+            int idx = i + offset;
+            bool isSelected = (idx == selectedIndex);
+
             drawRect(isSelected, DEFAULT_MARGIN, DEFAULT_MARGIN + (i * 30), M5.Lcd.width() - 15, 25);
             M5.Lcd.setCursor(DEFAULT_MARGIN + 10, DEFAULT_MARGIN + 8 + (i * 30));
-            M5.Lcd.print(items[i].c_str());
+            M5.Lcd.print(items[idx].substr(0, 23).c_str());
         }
 
         delay(100);
