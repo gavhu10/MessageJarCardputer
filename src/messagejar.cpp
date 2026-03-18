@@ -1,4 +1,5 @@
 #include "messagejar.h"
+#include "display.h"
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -120,7 +121,7 @@ bool MessageJar::check()
 
 bool MessageJar::create_user(string username, string password)
 {
-    auto response = request("/user/create", {{"username", username}, {"password", password}});
+    auto response = request("/user/new", {{"username", username}, {"password", password}});
     if (!response || !check_resp(*response))
     {
         return false;
@@ -193,4 +194,32 @@ bool MessageJar::create_room(string room_name)
         return false;
     }
     return (response && check_resp(*response));
+}
+
+bool MessageJar::user_exists(string username)
+{
+    auto resp = request("/user/exists", {{"username", username}, {"password", "this is a bug in the server that needs to be fixed"}});
+    if (resp)
+    {
+        if (resp->find("true") != string::npos)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+string MessageJar::generate_token(string username, string password, string name)
+{
+    auto resp = request("/user/generate", {{"username", username},
+                                           {"password", password},
+                                           {"name", name}});
+
+    if (resp && check_resp(*resp))
+    {
+        JsonDocument doc;
+        deserializeJson(doc, resp->c_str());
+        return doc["token"].as<string>();
+    }
+    return "";
 }

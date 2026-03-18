@@ -108,27 +108,76 @@ std::pair<string, string> connect_to_wifi(std::map<string, string> config)
   return {"", ""};
 }
 
+void connect_user(JsonDocument &doc, MessageJar *&user)
+{
+
+  string token = doc["token"].as<string>();
+  user = new MessageJar(token);
+
+  if (token.empty() || !user->check())
+  {
+    string username = getInput("Username");
+    string password = "";
+    string token = "";
+
+    if (MessageJar::user_exists(username))
+    {
+      password = getInput("Log in");
+    }
+    else
+    {
+      password = getInput("Create account");
+      string password2 = getInput("Confirm password");
+      if (password != password2)
+      {
+        displayMessageBox("Passwords don't match!");
+        while (true)
+        {
+          delay(1000);
+        }
+      }
+      if (!MessageJar::create_user(username, password))
+      {
+        displayMessageBox("User creation failed!");
+        while (true)
+        {
+          delay(1000);
+        }
+      }
+    }
+
+    int num = (esp_random() % 900) + 100; // number between 100 and 999
+    string name = "Cardputer-" + std::to_string(num);
+    token = MessageJar::generate_token(username, password, name);
+    if (token.empty())
+    {
+      displayMessageBox("Log in fail");
+      while (true)
+      {
+        delay(1000);
+      }
+    }
+    doc["token"] = token;
+    string output;
+    serializeJson(doc, output);
+    SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
+    delete user;
+    user = new MessageJar(token);
+  }
+}
+
 void config()
 {
-  if (!SDCard.isFile(CONFIG_FILE_PATH))
-  {
-    displayMessageBox("Config file not found!");
-    while (true)
-    {
-      delay(1000);
-    }
-  }
   auto configData = SDCard.readFile(CONFIG_FILE_PATH);
 
   JsonDocument doc;
   JsonDocument WIFI_CREDS;
   DeserializationError error = deserializeJson(doc, configData);
-  JsonObject obj = doc.as<JsonObject>();
   std::map<string, string> wifiMap;
 
   if (error)
   {
-    displayMessageBox("Config is malformed!");
+    displayMessageBox("Malformed config!");
     while (true)
     {
       delay(1000);
@@ -141,10 +190,6 @@ void config()
   {
     wifiMap[pair.key().c_str()] = pair.value().as<string>();
   }
-
-  TOKEN = obj["token"].as<string>();
-
-  User = new MessageJar(TOKEN);
 
   displayMessageBox("Getting SSIDs...");
 
@@ -161,7 +206,10 @@ void config()
     SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
   }
 
-  displayMessageBox("Connected to WiFi!");
+  displayMessageBox("WiFi connected!");
+
+  connect_user(doc, User);
+
   if (!User->check())
   {
     displayMessageBox("User auth failed!");
@@ -286,7 +334,16 @@ void setup()
 
   displayInit();
 
-  SDCard.begin();
+  if (!SDCard.begin())
+  {
+    {
+      displayMessageBox("No SD card!");
+      while (true)
+      {
+        delay(1000);
+      }
+    }
+  }
 
   // displayWelcome();
   // delay(2000);

@@ -5,16 +5,8 @@
 
 ## Config
 
-Message jar loads its configuration from `mjconfig.json` on the sd card which it uses to store credentials. Here is the minimum configuration:  
-
-```json
-{
-  "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-}
-```
-
-To get a token, create an account at [messagejar.pythonanywhere.com](https://messagejar.pythonanywhere.com) and click on your username. Then, if you navigate "Your api tokens", you should be able to create (and revoke) api tokens.
-
+Message jar loads its configuration from a file called `mjconfig.json` on the sd card.
+If you do not have an valid token in it, Message Jar Cardputer will help you log in or create an account.
 
 ## Credits
 
