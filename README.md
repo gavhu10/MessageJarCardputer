@@ -6,7 +6,7 @@
 ## Config
 
 Message jar loads its configuration from a file called `mjconfig.json` on the sd card.
-If you do not have an valid token in it, Message Jar Cardputer will help you log in or create an account.
+If you do not have an valid token saved, Message Jar Cardputer will help you log in or create an account.
 
 ## Credits
 
