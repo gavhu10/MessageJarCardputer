@@ -44,6 +44,21 @@ MessageJar *User = nullptr;
 // SdService instance
 SdService SDCard;
 
+void logout()
+{
+  auto configData = SDCard.readFile(CONFIG_FILE_PATH);
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, configData);
+
+  doc["token"] = "";
+
+  string output;
+  serializeJson(doc, output);
+
+  SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
+  ESP.restart();
+}
+
 void send(string message)
 {
   std::lock_guard<std::mutex> lock(userMutex);
@@ -223,7 +238,7 @@ void config()
   auto rooms = User->get_rooms();
   if (!rooms)
   {
-    displayMessageBox("No rooms found!");
+    displayMessageBox("Error getting rooms!");
     while (true)
     {
       delay(1000);
@@ -232,8 +247,9 @@ void config()
   else
   {
     rooms->push_back("+ Create new room");
+    rooms->push_back("+ Logout...");
     int num = selectFromList(*rooms);
-    if (num == rooms->size() - 1)
+    if (num == rooms->size() - 2)
     { // then we are creating a new room
       ROOM = getInput("Room name");
       if (!User->create_room(ROOM))
@@ -242,6 +258,10 @@ void config()
         for (;;)
           delay(1000);
       }
+    }
+    else if (num == rooms->size() - 1)
+    {
+      logout();
     }
     else
     {
