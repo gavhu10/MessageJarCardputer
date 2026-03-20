@@ -38,6 +38,7 @@ public:
     bool create_room(string room_name);
     static bool user_exists(string username); 
     static string generate_token(string username, string password, string name);
+    void revoke();
 
 private:
     string token;

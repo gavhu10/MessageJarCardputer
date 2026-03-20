@@ -145,7 +145,7 @@ void displayClearTerminalView()
     M5.Lcd.fillRect(0, 0, M5.Lcd.width(), M5.Lcd.height() - 30, BACKGROUND_COLOR);
 }
 
-void displayMessageBox(std::string message)
+void showMessage(std::string message)
 {
     // Clear screen
     M5.Lcd.fillScreen(BACKGROUND_COLOR);
@@ -317,6 +317,76 @@ std::string getInput(std::string prompt)
         M5.Lcd.print(sendString.c_str());
         M5.Lcd.setCursor(boxX + 10, boxY - 20);
         M5.Lcd.print(prompt.c_str());
+
+        delay(100);
+    }
+}
+
+bool confirm(std::string prompt)
+{
+    bool choice = true;
+    bool firstRender = true;
+    const uint8_t charsPerLine = 23;
+
+    while (true)
+    {
+        char input = promptInputHandler();
+
+        switch (input)
+        {
+        case KEY_ARROW_LEFT:
+        case KEY_ARROW_UP:
+            choice = true;
+            break;
+        case KEY_ARROW_RIGHT:
+        case KEY_ARROW_DOWN:
+            choice = false;
+            break;
+        case KEY_OK:
+        case KEY_RETURN:
+            if (!firstRender)
+                return choice;
+            break;
+        case KEY_NONE:
+            if (firstRender)
+            {
+                firstRender = false;
+            }
+            else
+            {
+                continue;
+            }
+            break;
+        default:
+            break;
+        }
+
+        displayClearMainView();
+
+        M5.Lcd.setTextColor(TEXT_COLOR);
+        M5.Lcd.setTextSize(1.5);
+
+        // Wrap the prompt text
+        int yOffset = 30; // Starting Y for text
+        for (size_t i = 0; i < prompt.length(); i += charsPerLine)
+        {
+            std::string line = prompt.substr(i, charsPerLine);
+            M5.Lcd.setCursor(20, yOffset);
+            M5.Lcd.print(line.c_str());
+            yOffset += 15; // Move to next line
+        }
+
+        uint16_t btnWidth = 60;
+        uint16_t btnHeight = 25;
+        uint16_t btnY = M5.Lcd.height() - 45;
+
+        drawRect(choice, 40, btnY, btnWidth, btnHeight);
+        M5.Lcd.setCursor(40 + 18, btnY + 8);
+        M5.Lcd.print("YES");
+
+        drawRect(!choice, 140, btnY, btnWidth, btnHeight);
+        M5.Lcd.setCursor(140 + 22, btnY + 8);
+        M5.Lcd.print("NO");
 
         delay(100);
     }

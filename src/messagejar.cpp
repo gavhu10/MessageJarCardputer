@@ -223,3 +223,8 @@ string MessageJar::generate_token(string username, string password, string name)
     }
     return "";
 }
+
+void MessageJar::revoke()
+{
+    auto resp = request("/token/revoke", {{"token", token}});
+}

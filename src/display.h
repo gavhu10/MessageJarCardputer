@@ -22,9 +22,11 @@ void displayTerminal(std::string terminalSting, size_t scroll = 0);
 void displayPrompt(std::string sendString);
 void displayClearMainView(uint8_t offsetY = 0);
 void displayClearTerminalView();
-void displayMessageBox(std::string message);
+void showMessage(std::string message);
 unsigned int selectFromList(std::vector<std::string> items, unsigned int startIndex = 0);
 std::string getInput(std::string);
+bool confirm(std::string prompt);
+
 
 // Utility Function (forward declaration if needed)
 void drawRect(bool selected, uint8_t margin, uint16_t startY, uint16_t sizeX, uint16_t sizeY);

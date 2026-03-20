@@ -56,6 +56,9 @@ void logout()
   serializeJson(doc, output);
 
   SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
+  if (confirm("Do you want to revoke  this token?")) {
+    User->revoke();
+  }
   ESP.restart();
 }
 
@@ -106,7 +109,7 @@ std::pair<string, string> connect_to_wifi(std::map<string, string> config)
 
   WiFi.begin(SSID.c_str(), password.c_str());
 
-  displayMessageBox("Connecting to WiFi...");
+  showMessage("Connecting to WiFi...");
 
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -145,7 +148,7 @@ void connect_user(JsonDocument &doc, MessageJar *&user)
       string password2 = getInput("Confirm password");
       if (password != password2)
       {
-        displayMessageBox("Passwords don't match!");
+        showMessage("Passwords don't match!");
         while (true)
         {
           delay(1000);
@@ -153,7 +156,7 @@ void connect_user(JsonDocument &doc, MessageJar *&user)
       }
       if (!MessageJar::create_user(username, password))
       {
-        displayMessageBox("User creation failed!");
+        showMessage("User creation failed!");
         while (true)
         {
           delay(1000);
@@ -166,7 +169,7 @@ void connect_user(JsonDocument &doc, MessageJar *&user)
     token = MessageJar::generate_token(username, password, name);
     if (token.empty())
     {
-      displayMessageBox("Log in fail");
+      showMessage("Log in fail");
       while (true)
       {
         delay(1000);
@@ -192,7 +195,7 @@ void config()
 
   if (error)
   {
-    displayMessageBox("Malformed config!");
+    showMessage("Malformed config!");
     while (true)
     {
       delay(1000);
@@ -206,7 +209,7 @@ void config()
     wifiMap[pair.key().c_str()] = pair.value().as<string>();
   }
 
-  displayMessageBox("Getting SSIDs...");
+  showMessage("Getting SSIDs...");
 
   std::pair<string, string> creds = connect_to_wifi(wifiMap);
 
@@ -221,24 +224,24 @@ void config()
     SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
   }
 
-  displayMessageBox("WiFi connected!");
+  showMessage("WiFi connected!");
 
   connect_user(doc, User);
 
   if (!User->check())
   {
-    displayMessageBox("User auth failed!");
+    showMessage("User auth failed!");
     while (true)
     {
       delay(1000);
     }
   }
-  displayMessageBox("Getting rooms...");
+  showMessage("Getting rooms...");
 
   auto rooms = User->get_rooms();
   if (!rooms)
   {
-    displayMessageBox("Error getting rooms!");
+    showMessage("Error getting rooms!");
     while (true)
     {
       delay(1000);
@@ -254,7 +257,7 @@ void config()
       ROOM = getInput("Room name");
       if (!User->create_room(ROOM))
       {
-        displayMessageBox("Failed to make room");
+        showMessage("Failed to make room");
         for (;;)
           delay(1000);
       }
@@ -357,7 +360,7 @@ void setup()
   if (!SDCard.begin())
   {
     {
-      displayMessageBox("No SD card!");
+      showMessage("No SD card!");
       while (true)
       {
         delay(1000);
@@ -391,7 +394,7 @@ void setup()
   );
 
   displayClearMainView();
-  displayMessageBox("Loading messages...");
+  showMessage("Loading messages...");
 }
 
 void loop()
