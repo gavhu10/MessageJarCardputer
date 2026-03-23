@@ -59,6 +59,8 @@ void logout()
   {
     User->revoke();
   }
+  showMessage("Rebooting...");
+  delay(100);
   ESP.restart();
 }
 
