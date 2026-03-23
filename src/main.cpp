@@ -23,7 +23,6 @@ bool flowControl = false;
 bool inverted = false;
 short times_before_refresh = 5;
 
-string ROOM = "";
 string TOKEN = "";
 
 // Var atomic for receive thread
@@ -56,16 +55,17 @@ void logout()
   serializeJson(doc, output);
 
   SDCard.writeFile(CONFIG_FILE_PATH, output.c_str());
-  if (confirm("Do you want to revoke  this token?")) {
+  if (confirm("Do you want to revoke  this token?"))
+  {
     User->revoke();
   }
   ESP.restart();
 }
 
-void send(string message)
+void send(string message, string room)
 {
   std::lock_guard<std::mutex> lock(userMutex);
-  User->send(std::string{ROOM}, std::string{message});
+  User->send(room, message);
 }
 
 std::pair<string, string> connect_to_wifi(std::map<string, string> config)
@@ -236,6 +236,12 @@ void config()
       delay(1000);
     }
   }
+}
+
+string get_room()
+{
+  string ret;
+
   showMessage("Getting rooms...");
 
   auto rooms = User->get_rooms();
@@ -254,8 +260,8 @@ void config()
     int num = selectFromList(*rooms);
     if (num == rooms->size() - 2)
     { // then we are creating a new room
-      ROOM = getInput("Room name");
-      if (!User->create_room(ROOM))
+      ret = getInput("Room name");
+      if (!User->create_room(ret))
       {
         showMessage("Failed to make room");
         for (;;)
@@ -268,12 +274,13 @@ void config()
     }
     else
     {
-      ROOM = rooms->at(num);
+      ret = rooms->at(num);
     }
   }
+  return ret;
 }
 
-void terminal()
+void terminal(string room)
 {
   int16_t promptSize = -1;
   // int16_t terminalSize = -1;
@@ -291,7 +298,7 @@ void terminal()
       case KEY_NONE:
         break;
       case KEY_OK:
-        send(sendString);
+        send(sendString, room);
         sendString.clear();
         break;
       case KEY_DEL:
@@ -317,6 +324,13 @@ void terminal()
         redraw = true;
         break;
       }
+      case KEY_ESC:
+      {
+        running = false;
+        displayClearMainView();
+        showMessage("Exiting...");
+        break;
+      }
       default:
       {
         sendString += input;
@@ -325,7 +339,7 @@ void terminal()
       }
     }
 
-    if (receiveDataFlag) // if data has been be recived (receiveDataFlag)
+    if (receiveDataFlag.exchange(false)) // if data has been be recived (receiveDataFlag)
     {
       std::lock_guard<std::mutex> lock(receiveMutex);
       messages += receiveString;
@@ -373,6 +387,13 @@ void setup()
 
   // config
   config();
+}
+
+void loop()
+{
+
+  string room = get_room();
+  running = true;
 
   MessageTaskParams *params = new MessageTaskParams{
       &receiveDataFlag,
@@ -381,7 +402,7 @@ void setup()
       &receiveMutex,
       &userMutex,
       User,
-      ROOM,
+      room,
   };
 
   xTaskCreate(     // Using xTaskCreate to manage memory better
@@ -395,9 +416,6 @@ void setup()
 
   displayClearMainView();
   showMessage("Loading messages...");
-}
-
-void loop()
-{
-  terminal();
+  terminal(room);
+  // if we are here the user pressed esc
 }

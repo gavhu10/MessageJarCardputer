@@ -11,6 +11,7 @@
 #define KEY_ARROW_DOWN '.'
 #define KEY_ARROW_LEFT ','
 #define KEY_ARROW_RIGHT '/'
+#define KEY_ESC '`'
 
 char configInputHandler();
 char promptInputHandler();
