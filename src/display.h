@@ -6,7 +6,7 @@
 #include <M5Cardputer.h> // Assurez-vous que cette bibliothèque est la bonne selon votre matériel (M5Stack, M5Cardputer, etc.)
 
 #define BACKGROUND_COLOR TFT_BLACK
-#define PRIMARY_COLOR 0xfa03
+#define PRIMARY_COLOR 0xf3e1 
 #define RECT_COLOR_DARK 0x0841
 #define RECT_COLOR_LIGHT 0xd69a
 #define TEXT_COLOR 0xef7d

@@ -172,6 +172,9 @@ unsigned int selectFromList(std::vector<std::string> items, unsigned int startIn
     bool selectionMade = false;
     bool firstRender = true;
 
+    M5.Lcd.setTextColor(TEXT_COLOR);
+    M5.Lcd.setTextSize(1.5);
+
     while (!selectionMade)
     {
 
