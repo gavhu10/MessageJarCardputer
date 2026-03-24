@@ -8,7 +8,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cache/pip
@@ -22,7 +22,9 @@ jobs:
 
       - name: Build PlatformIO Project
         run: pio run
+      - name: Rename compiled firmware
+        run: mv .pio/build/m5stack-stamps3/firmware.bin ./MessageJarCardputer.bin
       - uses: actions/upload-artifact@v6
         with:
-          name: m5stack-firmware
-          path: .pio/build/m5stack-stamps3/firmware.bin
+          name: messagejar-firmware
+          path: ./MessageJarCardputer.bin
