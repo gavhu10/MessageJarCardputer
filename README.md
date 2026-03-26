@@ -1,7 +1,7 @@
 # Message Jar
 
 [Message Jar](https://github.com/gavhu10/MessageJar/) is a messaging platform written in Python with Flask. This is a client for it made for the M5 Cardputer.
-![Demo image](pic1.jpg)
+![Demo image](pic.png)
 
 ## Config
 
