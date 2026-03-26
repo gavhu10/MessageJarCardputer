@@ -188,7 +188,6 @@ bool MessageJar::send(string room, string content)
 bool MessageJar::create_room(string room_name)
 {
     auto response = request("/rooms/create", {{"token", token}, {"room", room_name}});
-    request(*response, {{}});
     if (!response || !check_resp(*response))
     {
         return false;
@@ -198,7 +197,7 @@ bool MessageJar::create_room(string room_name)
 
 bool MessageJar::user_exists(string username)
 {
-    auto resp = request("/user/exists", {{"username", username}, {"password", "this is a bug in the server that needs to be fixed"}});
+    auto resp = request("/user/exists", {{"username", username}});
     if (resp)
     {
         if (resp->find("true") != string::npos)
