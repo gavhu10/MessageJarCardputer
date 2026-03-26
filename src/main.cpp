@@ -1,6 +1,6 @@
 #include <ArduinoJson.h>
 #include <M5Cardputer.h>
-#include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 #include "MessageJarCardputerLogo.h"
 #include "SdService.h"
@@ -98,12 +98,25 @@ std::pair<string, string> connect_to_wifi(std::map<string, string> config) {
     password = config[SSID];
   }
 
+  WiFi.mode(WIFI_STA);
   WiFi.begin(SSID.c_str(), password.c_str());
 
   showMessage("Connecting to WiFi...");
 
-  while (WiFi.status() != WL_CONNECTED) {
+  int retry_count = 0;
+
+  while (WiFi.status() != WL_CONNECTED && retry_count < 20) {
     delay(500);
+    retry_count++;
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    showMessage("Connection failed");
+
+
+    while(true) {
+      delay(1000);
+    }
   }
 
   // return the wifi password if it was not in the config
@@ -182,7 +195,6 @@ void config() {
   for (auto pair : WIFI_CREDS.as<JsonObject>()) {
     wifiMap[pair.key().c_str()] = pair.value().as<string>();
   }
-
 
   std::pair<string, string> creds = connect_to_wifi(wifiMap);
 
@@ -293,7 +305,6 @@ void terminal(string room) {
       messages += receiveString;
       receiveString.clear();
       redraw = true;
-      receiveDataFlag = false;
     }
 
     if (promptSize != sendString.size()) {
